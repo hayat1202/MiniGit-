@@ -141,3 +141,33 @@ std::string& parentHash) {
  
     return commitHash; 
 }
+void MiniGit::log() {
+std::string currentHash = readBranch(currentBranch);
+while (!currentHash.empty()) {
+    std::ifstream commitFile(".minigit/objects/" + currentHash);
+    std::string line;
+    std::cout << "Commit " << currentHash << "\n";
+while (std::getline(commitFile, line)) {
+    if (line.rfind("message:", 0) == 0) {
+    std::cout << "Message: " << line.substr(8) << "\n";
+  }
+}
+commitFile.clear();
+commitFile.seekg(0);
+    
+while (std::getline(commitFile, line)) {
+    if (line.rfind("parent:", 0) == 0) {
+    currentHash = line.substr(7);
+    break;
+  }
+}
+if (currentHash.empty()) break;
+    std::cout << "----\n";
+  }
+}
+
+void MiniGit::createBranch(const std::string& branchName) {
+    std::string headCommit = readBranch(currentBranch);
+    writeBranch(branchName, headCommit);
+    std::cout << "Created branch '" << branchName << "'\n";
+}
