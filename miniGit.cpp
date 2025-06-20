@@ -77,3 +77,67 @@ fs::directory_iterator(".minigit/branches")) {
         branches[file.path().filename().string()] = hash; 
     } 
 } 
+void MiniGit::add(const std::string& filename) { 
+    if (!fs::exists(filename)) { 
+        std::cout << "File does not exist: " << filename << "\n"; 
+        return; 
+    } 
+ 
+    std::ifstream file(filename); 
+    std::stringstream buffer; 
+    buffer << file.rdbuf(); 
+    std::string contents = buffer.str(); 
+ 
+    std::string hash = hashFile(contents); 
+    stagingArea[filename] = hash; 
+    std::cout << "Staged " << filename << "\n"; 
+} 
+ 
+void MiniGit::commit(const std::string& message) { 
+    std::string parentHash = readBranch(currentBranch); 
+    std::string commitHash = createCommit(message, parentHash); 
+ 
+    for (auto& [filename, hash] : stagingArea) { 
+        writeBlob(hash, filename); 
+    } 
+ 
+    writeBranch(currentBranch, commitHash); 
+    writeHEAD(currentBranch); 
+    stagingArea.clear(); 
+    std::cout << "Committed as " << commitHash << "\n"; 
+} 
+ 
+std::string MiniGit::hashFile(const std::string& content) { 
+    std::hash<std::string> hasher; 
+    return std::to_string(hasher(content)); 
+} 
+ 
+void MiniGit::writeBlob(const std::string& hash, const std::string& 
+filename) { 
+    std::ifstream src(filename); 
+    std::ofstream dest(".minigit/objects/" + hash); 
+    dest << src.rdbuf(); 
+} 
+ 
+std::string MiniGit::createCommit(const std::string& message, const 
+std::string& parentHash) { 
+    std::ostringstream ss; 
+    ss << message << std::time(nullptr); 
+ 
+    for (const auto& [file, hash] : stagingArea) { 
+        ss << file << hash; 
+    } 
+ 
+    std::string combined = ss.str(); 
+    std::string commitHash = hashFile(combined); 
+ 
+    std::ofstream commitFile(".minigit/objects/" + commitHash); 
+    commitFile << "parent:" << parentHash << "\n"; 
+    commitFile << "message:" << message << "\n"; 
+ 
+    for (const auto& [file, hash] : stagingArea) { 
+        commitFile << "file:" << file << " " << hash << "\n"; 
+    } 
+ 
+    return commitHash; 
+}
