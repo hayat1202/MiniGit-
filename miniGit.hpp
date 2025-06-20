@@ -10,3 +10,9 @@ std::string readBranch(const std::string& branch);
 void writeBranch(const std::string& branch, const std::string& 
 commitHash); 
 void loadBranches(); 
+std::unordered_map<std::string, std::string> stagingArea; 
+std::string hashFile(const std::string& content); 
+void writeBlob(const std::string& hash, const std::string& 
+filename); 
+std::string createCommit(const std::string& message, const 
+std::string& parentHash);
